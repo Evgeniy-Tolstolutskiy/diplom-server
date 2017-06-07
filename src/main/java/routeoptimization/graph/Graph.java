@@ -1,6 +1,7 @@
 package routeoptimization.graph;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,6 +18,11 @@ public class Graph {
         this.relations = relations;
         this.distances = distances;
         next = new int[nodes.size()][nodes.size()];
+        for (int i = 0; i < nodes.size(); i++) {
+            for (int j = 0; j < nodes.size(); j++) {
+                next[i][j] = -1;
+            }
+        }
         this.distances = floydWarshall(nodes.size(), this.distances);
     }
 
@@ -59,6 +65,12 @@ public class Graph {
     public List<Integer> getPath(int start, int end) {
         List<Integer> result = new ArrayList<>();
         result.add(start);
+
+        if (next[start][end] == -1) {
+            result.add(end);
+            return result;
+        }
+
         while (start != end) {
             start = next[start][end];
             result.add(start);

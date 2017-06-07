@@ -33,11 +33,26 @@ public class DbConnector {
     private Driver driver;
     private Session session;
     private Graph subwayGraph;
+    private List<Graph> busGraphs;
+    private List<List<Integer>> busGraphsIndexes;
 
     @PostConstruct
     private void postConstruct() {
         driver = GraphDatabase.driver(dbUri, AuthTokens.basic(dbLogin, dbPassword));
         session = driver.session();
+    }
+
+    public int getBusGraphIndex(int graphIndex, int nodeIndex) {
+        return busGraphsIndexes.get(graphIndex).get(nodeIndex);
+    }
+
+    public void refreshSubway() {
+        subwayGraph = null;
+    }
+
+    public void refreshBus() {
+        busGraphs = null;
+        busGraphsIndexes = null;
     }
 
     public Graph getSubwayGraph(String city) {
@@ -47,7 +62,24 @@ public class DbConnector {
         return subwayGraph;
     }
 
-    private Graph getGraph (String prefix) {
+    public List<Graph> getBusGraphs(String city) {
+        if (busGraphs == null) {
+            busGraphs = new ArrayList<>();
+            busGraphs.add(getGraph(city.toUpperCase() + "_BUS_STRAIGHT"));
+            busGraphs.add(getGraph(city.toUpperCase() + "_BUS_BACKWARD"));
+            busGraphsIndexes = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                busGraphsIndexes.add(new ArrayList<>());
+                for (String[] node : busGraphs.get(i).getNodes()) {
+                    String[] strings = node[0].split("_");
+                    busGraphsIndexes.get(i).add(Integer.parseInt(strings[strings.length - 1]));
+                }
+            }
+        }
+        return busGraphs;
+    }
+
+    private Graph getGraph(String prefix) {
         StatementResult result = session.run(String.format("MATCH (n) WHERE any(l IN labels(n) WHERE l=~'%s.*') " +
                 "RETURN n.latitude as latitude, n.longitude as longitude, labels(n) as label", prefix));
         List<String[]> nodes = new ArrayList<>();
@@ -73,7 +105,6 @@ public class DbConnector {
                 distances[i][j] = findDistance(nodes.get(i)[0], nodes.get(j)[0], relations);
             }
         }
-        session.close();
         return new Graph(nodes, relations, distances);
     }
 

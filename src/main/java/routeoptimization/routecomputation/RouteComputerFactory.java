@@ -15,9 +15,15 @@ public class RouteComputerFactory {
     @Qualifier("subwayRouteComputer")
     private RouteComputer subwayRouteComputer;
 
+    @Autowired
+    @Qualifier("busRouteComputer")
+    private RouteComputer busRouteComputer;
+
     public RouteComputer createComputer(String transportType) {
         if (transportType.toLowerCase().equals(TransportType.SUBWAY.toString())) {
             return subwayRouteComputer;
+        } else if (transportType.toLowerCase().equals(TransportType.BUS.toString())) {
+            return busRouteComputer;
         }
         return null;
     }
